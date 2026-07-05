@@ -126,6 +126,15 @@ export function LessonRoomScreen({ route, navigation }: Props) {
           if (updated.status === 'ended') handleLeave();
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'lessons', filter: `id=eq.${lesson.id}` },
+        () => {
+          // The lesson row itself is gone — the room is orphaned, so treat it
+          // the same as the instructor ending the lesson.
+          handleLeave();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -209,7 +218,7 @@ function ControlButton({
 
   const content = (
     <>
-      <Icon size={20} color={IconCoo}>
+      <Icon size={20} color={iconColor} />
       {!!badge && (
         <View style={styles.chatBadge}>
           <Text style={styles.chatBadgeText}>{badge}</Text>
@@ -257,7 +266,12 @@ function CallView({ insetsBottom, onLeave }: { insetsBottom: number; onLeave: ()
   const seenMessageCount = useRef(0);
 
   useEffect(() => {
-    if (!chatOpen && chatMessages.length > seenMessageCount.current) {
+    if (chatOpen) {
+      // Chat is open — keep "seen" in sync with every new message as it
+      // arrives, so nothing gets miscounted as unread once the modal closes.
+      seenMessageCount.current = chatMessages.length;
+      setUnreadCount(0);
+    } else if (chatMessages.length > seenMessageCount.current) {
       setUnreadCount(chatMessages.length - seenMessageCount.current);
     }
   }, [chatMessages.length, chatOpen]);
