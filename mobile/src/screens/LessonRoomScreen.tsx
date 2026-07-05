@@ -209,7 +209,7 @@ function ControlButton({
 
   const content = (
     <>
-      <Icon size={20} color={iconColor} />
+      <Icon size={20} color={IconCoo}>
       {!!badge && (
         <View style={styles.chatBadge}>
           <Text style={styles.chatBadgeText}>{badge}</Text>
