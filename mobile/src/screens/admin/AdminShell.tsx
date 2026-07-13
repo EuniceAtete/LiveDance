@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { colors } from '../../theme';
@@ -27,6 +28,7 @@ interface AdminShellProps {
 // Auth session, and provide the tab bar admin-navbar.tsx renders on the web.
 export function AdminShell({ navigation, active, title, subtitle, children }: AdminShellProps) {
   const [checking, setChecking] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     let mounted = true;
@@ -62,20 +64,24 @@ export function AdminShell({ navigation, active, title, subtitle, children }: Ad
 
   return (
     <View style={styles.screen}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabBarContent}>
-        {TABS.map((tab) => (
-          <Pressable
-            key={tab.key}
-            onPress={() => tab.key !== active && navigation.replace(tab.key as any)}
-            style={[styles.tab, tab.key === active && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, tab.key === active && styles.tabTextActive]}>{tab.label}</Text>
-          </Pressable>
-        ))}
-        <Pressable onPress={handleLogout} style={styles.tab}>
-          <Text style={[styles.tabText, { color: colors.error }]}>Logout</Text>
+      <View style={[styles.tabBarRow, { paddingTop: insets.top + 10 }]}>
+        <View style={styles.tabRow}>
+          {TABS.map((tab) => (
+            <Pressable
+              key={tab.key}
+              onPress={() => tab.key !== active && navigation.replace(tab.key as any)}
+              style={[styles.tab, tab.key === active && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, tab.key === active && styles.tabTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable onPress={handleLogout} style={styles.logoutBtn}>
+          <Text style={styles.logoutText}>Logout</Text>
         </Pressable>
-      </ScrollView>
+      </View>
 
       <View style={styles.titleRow}>
         <Text style={styles.title}>{title}</Text>
@@ -92,6 +98,9 @@ export function AdminShell({ navigation, active, title, subtitle, children }: Ad
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
     backgroundColor: colors.bgBase,
   },
   centered: {
@@ -100,26 +109,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabBar: {
+  tabBarRow: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.bgElevated,
+    paddingRight: 12,
   },
-  tabBarContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+  tabRow: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    gap: 3,
   },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 2,
+    borderRadius: 8,
   },
   tabActive: {
     backgroundColor: colors.uvPurple,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.textSecondary,
     textTransform: 'uppercase',
@@ -127,7 +146,24 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: '#fff',
   },
+  logoutBtn: {
+    flexGrow: 0,
+    flexShrink: 0,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  logoutText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.error,
+    textTransform: 'uppercase',
+  },
   titleRow: {
+    flexGrow: 0,
+    flexShrink: 0,
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 8,

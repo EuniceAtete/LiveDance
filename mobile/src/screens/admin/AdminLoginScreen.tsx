@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Card } from '../../components/Card';
@@ -73,6 +73,10 @@ export function AdminLoginScreen({ navigation }: Props) {
           </Button>
         </View>
       </Card>
+
+      <Pressable onPress={() => navigation.navigate('JoinSession')} style={styles.studentLink}>
+        <Text style={styles.studentLinkText}>← Back to student login</Text>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }
@@ -131,5 +135,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  studentLink: {
+    alignSelf: 'center',
+    marginTop: 24,
+    padding: 8,
+  },
+  studentLinkText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
