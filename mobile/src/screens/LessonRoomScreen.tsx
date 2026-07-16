@@ -112,15 +112,19 @@ export function LessonRoomScreen({ route, navigation }: Props) {
       </View>
 
       <WebView
-        source={{ uri: jitsiUrl }}
-        style={styles.webview}
-        mediaPlaybackRequiresUserAction={false}
-        allowsInlineMediaPlayback
-        javaScriptEnabled
-        domStorageEnabled
-        originWhitelist={['*']}
-        onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
-      />
+  source={{ uri: jitsiUrl }}
+  style={styles.webview}
+  mediaPlaybackRequiresUserAction={false}
+  allowsInlineMediaPlayback
+  javaScriptEnabled
+  domStorageEnabled
+  originWhitelist={['*']}
+  onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
+  onPermissionRequest={(request) => {
+    request.grant(request.resources);
+  }}
+  mediaCapturePermissionGrantType="grant"
+/>
     </View>
   );
 }
