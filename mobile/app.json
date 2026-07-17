@@ -31,6 +31,7 @@
       "eas": {
         "projectId": "7e831caa-ce77-410f-80d0-3191e5d97fb0"
       }
-    }
+    },
+    "plugins": ["@livekit/react-native-expo-plugin", "@config-plugins/react-native-webrtc"]
   }
 }

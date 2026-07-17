@@ -15,6 +15,14 @@ interface ActionResponse {
   error?: string;
 }
 
+interface LiveKitTokenResponse {
+  success: boolean;
+  error?: string;
+  url?: string;
+  token?: string;
+  roomName?: string;
+}
+
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -40,3 +48,6 @@ export const joinLessonAttendance = (token: string) =>
 
 export const leaveLessonAttendance = (token: string) =>
   post<ActionResponse>('/api/mobile/attendance/leave', { token });
+
+export const getLiveKitToken = (lessonId: string, token: string, accessToken?: string) =>
+  post<LiveKitTokenResponse>('/api/mobile/livekit/token', { lessonId, token, accessToken });
