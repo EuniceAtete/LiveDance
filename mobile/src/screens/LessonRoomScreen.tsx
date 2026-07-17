@@ -94,7 +94,7 @@ export function LessonRoomScreen({ route, navigation }: Props) {
   }
 
   const jitsiRoomName = `LiveDance_${lesson.meeting_room || lesson.id.substring(0, 8)}`;
-  const jitsiUrl = `https://meet.jit.si/${jitsiRoomName}#config.prejoinPageEnabled=false&config.startWithAudioMuted=true&config.startWithVideoMuted=true&interfaceConfig.SHOW_JITSI_WATERMARK=false`;
+  const jitsiUrl = `https://meet.jit.si/${jitsiRoomName}#config.prejoinPageEnabled=false&config.startWithVideoMuted=true&interfaceConfig.SHOW_JITSI_WATERMARK=false`;
 
   return (
     <View style={styles.screen}>
@@ -112,19 +112,15 @@ export function LessonRoomScreen({ route, navigation }: Props) {
       </View>
 
       <WebView
-  source={{ uri: jitsiUrl }}
-  style={styles.webview}
-  mediaPlaybackRequiresUserAction={false}
-  allowsInlineMediaPlayback
-  javaScriptEnabled
-  domStorageEnabled
-  originWhitelist={['*']}
-  onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
-  onPermissionRequest={(request) => {
-    request.grant(request.resources);
-  }}
-  mediaCapturePermissionGrantType="grant"
-/>
+        source={{ uri: jitsiUrl }}
+        style={styles.webview}
+        mediaPlaybackRequiresUserAction={false}
+        allowsInlineMediaPlayback
+        javaScriptEnabled
+        domStorageEnabled
+        originWhitelist={['*']}
+        onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
+      />
     </View>
   );
 }
