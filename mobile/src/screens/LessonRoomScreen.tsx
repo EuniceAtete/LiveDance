@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, PermissionsAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,9 +12,27 @@ import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonRoom'>;
 
+async function requestLiveRoomPermissions() {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+
+  const results = await PermissionsAndroid.requestMultiple([
+    PermissionsAndroid.PERMISSIONS.CAMERA,
+    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+  ]);
+
+  return (
+    results[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED &&
+    results[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED
+  );
+}
+
 export function LessonRoomScreen({ route, navigation }: Props) {
   const { lessonId, token } = route.params;
   const [loading, setLoading] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [permissionRetry, setPermissionRetry] = useState(0);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const leftRef = useRef(false);
   const insets = useSafeAreaInsets();
@@ -34,6 +52,12 @@ export function LessonRoomScreen({ route, navigation }: Props) {
           navigation.replace('AdminDashboard');
           return;
         }
+        const granted = await requestLiveRoomPermissions();
+        if (!granted) {
+          setPermissionDenied(true);
+          setLoading(false);
+          return;
+        }
         setLesson(lessonData as Lesson);
         setLoading(false);
         return;
@@ -44,11 +68,17 @@ export function LessonRoomScreen({ route, navigation }: Props) {
         navigation.replace('Status', { token });
         return;
       }
+      const granted = await requestLiveRoomPermissions();
+      if (!granted) {
+        setPermissionDenied(true);
+        setLoading(false);
+        return;
+      }
       setLesson(res.lesson);
       setLoading(false);
     };
     verify();
-  }, [lessonId, token, navigation]);
+  }, [lessonId, token, navigation, permissionRetry]);
 
   const handleLeave = React.useCallback(async () => {
     if (leftRef.current) return;
@@ -85,6 +115,30 @@ export function LessonRoomScreen({ route, navigation }: Props) {
   }, [lesson, handleLeave]);
 
   if (loading || !lesson) {
+    if (permissionDenied) {
+      return (
+        <View style={[styles.centered, { paddingTop: insets.top, paddingHorizontal: 24 }]}>
+          <Text style={styles.permissionTitle}>Camera and microphone needed</Text>
+          <Text style={styles.permissionText}>
+            LiveDance needs camera and microphone access before joining the live room.
+          </Text>
+          <Pressable
+            style={styles.permissionBtn}
+            onPress={() => {
+              setPermissionDenied(false);
+              setLoading(true);
+              setPermissionRetry((value) => value + 1);
+            }}
+          >
+            <Text style={styles.leaveText}>Try Again</Text>
+          </Pressable>
+          <Pressable style={styles.permissionBtn} onPress={handleLeave}>
+            <Text style={styles.leaveText}>Leave</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
         <ActivityIndicator color={colors.uvPurple} size="large" />
@@ -94,7 +148,7 @@ export function LessonRoomScreen({ route, navigation }: Props) {
   }
 
   const jitsiRoomName = `LiveDance_${lesson.meeting_room || lesson.id.substring(0, 8)}`;
-  const jitsiUrl = `https://meet.jit.si/${jitsiRoomName}#config.prejoinPageEnabled=false&config.startWithAudioMuted=true&config.startWithVideoMuted=true&interfaceConfig.SHOW_JITSI_WATERMARK=false`;
+  const jitsiUrl = `https://meet.jit.si/${jitsiRoomName}#config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&interfaceConfig.SHOW_JITSI_WATERMARK=false`;
 
   return (
     <View style={styles.screen}>
@@ -112,19 +166,19 @@ export function LessonRoomScreen({ route, navigation }: Props) {
       </View>
 
       <WebView
-  source={{ uri: jitsiUrl }}
-  style={styles.webview}
-  mediaPlaybackRequiresUserAction={false}
-  allowsInlineMediaPlayback
-  javaScriptEnabled
-  domStorageEnabled
-  originWhitelist={['*']}
-  onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
-  onPermissionRequest={(request) => {
-    request.grant(request.resources);
-  }}
-  mediaCapturePermissionGrantType="grant"
-/>
+        source={{ uri: jitsiUrl }}
+        style={styles.webview}
+        mediaPlaybackRequiresUserAction={false}
+        allowsInlineMediaPlayback
+        javaScriptEnabled
+        domStorageEnabled
+        originWhitelist={['*']}
+        onShouldStartLoadWithRequest={(request) => request.url.startsWith('http')}
+        onPermissionRequest={(request) => {
+          request.grant(request.resources);
+        }}
+        mediaCapturePermissionGrantType="grant"
+      />
     </View>
   );
 }
@@ -146,6 +200,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'uppercase',
+  },
+  permissionTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  permissionText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  permissionBtn: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    minWidth: 120,
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
