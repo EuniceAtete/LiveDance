@@ -7,6 +7,7 @@ import {
   useTracks,
   useLocalParticipant,
   VideoTrack,
+  isTrackReference,
 } from '@livekit/react-native';
 import { Track } from 'livekit-client';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -142,40 +143,52 @@ export function LessonRoomScreen({ route, navigation }: Props) {
 
       <View style={styles.room}>
         <LiveKitRoom serverUrl={livekitUrl} token={livekitToken} connect audio video={false} onDisconnected={handleLeave}>
-          <CallView />
+          <CallView insetsBottom={insets.bottom} />
         </LiveKitRoom>
       </View>
     </View>
   );
 }
 
-function CallView() {
-  const tracks = useTracks([Track.Source.Camera]);
+function initials(label: string) {
+  return label.trim().charAt(0).toUpperCase() || '?';
+}
+
+function CallView({ insetsBottom }: { insetsBottom: number }) {
+  // withPlaceholder keeps every participant visible (as an avatar) even before
+  // they've published a camera track — otherwise anyone joining camera-off is
+  // invisible instead of just showing without video.
+  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]);
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
 
   return (
     <View style={styles.callArea}>
       <View style={styles.videoGrid}>
-        {tracks.length === 0 ? (
-          <View style={styles.emptyCall}>
-            <Text style={styles.emptyCallText}>Waiting for others to join…</Text>
-          </View>
-        ) : (
-          tracks.map((track) => (
+        {tracks.map((track) => {
+          const label = track.participant.name || track.participant.identity;
+          return (
             <View
               key={`${track.participant.identity}-${track.source}`}
               style={tracks.length === 1 ? styles.videoTileFull : styles.videoTileGrid}
             >
-              <VideoTrack trackRef={track} style={styles.video} objectFit="cover" />
+              {isTrackReference(track) ? (
+                <VideoTrack trackRef={track} style={styles.video} objectFit="cover" />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <View style={styles.avatarCircle}>
+                    <Text style={styles.avatarInitial}>{initials(label)}</Text>
+                  </View>
+                </View>
+              )}
               <Text style={styles.videoLabel} numberOfLines={1}>
-                {track.participant.name || track.participant.identity}
+                {label}
               </Text>
             </View>
-          ))
-        )}
+          );
+        })}
       </View>
 
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingBottom: insetsBottom + 14 }]}>
         <Pressable
           style={[styles.controlBtn, !isMicrophoneEnabled && styles.controlBtnOff]}
           onPress={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}
@@ -286,15 +299,24 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  emptyCall: {
+  avatarPlaceholder: {
     flex: 1,
-    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgElevated2,
+  },
+  avatarCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.uvPurple,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyCallText: {
-    color: colors.textSecondary,
-    fontSize: 13,
+  avatarInitial: {
+    color: colors.textPrimary,
+    fontSize: 28,
+    fontWeight: '700',
   },
   controls: {
     flexDirection: 'row',
