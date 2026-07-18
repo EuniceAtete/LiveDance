@@ -21,6 +21,7 @@ import {
   useChat,
   VideoTrack,
   isTrackReference,
+  type TrackReference,
   type TrackReferenceOrPlaceholder,
 } from '@livekit/react-native';
 import { Track } from 'livekit-client';
@@ -169,6 +170,14 @@ function initials(label: string) {
   return label.trim().charAt(0).toUpperCase() || '?';
 }
 
+// A camera toggled off mutes the existing publication rather than removing
+// it, so isTrackReference alone still returns true — without also checking
+// isMuted, the last rendered frame stays frozen on screen instead of
+// switching to the avatar placeholder.
+function hasLiveVideo(track: TrackReferenceOrPlaceholder): track is TrackReference {
+  return isTrackReference(track) && !track.publication.isMuted;
+}
+
 function Avatar({ label }: { label: string }) {
   return (
     <View style={styles.avatarPlaceholder}>
@@ -280,7 +289,7 @@ function CallView({ insetsBottom, onLeave }: { insetsBottom: number; onLeave: ()
           style={styles.videoTileFull}
           onPress={() => !activeScreenShare && setFocusedIdentity(null)}
         >
-          {isTrackReference(mainTrack) ? (
+          {hasLiveVideo(mainTrack) ? (
             <VideoTrack trackRef={mainTrack} style={styles.video} objectFit="contain" />
           ) : (
             <Avatar label={mainLabel} />
@@ -300,7 +309,7 @@ function CallView({ insetsBottom, onLeave }: { insetsBottom: number; onLeave: ()
                 style={cameraTracks.length === 1 ? styles.videoTileFull : styles.videoTileGrid}
                 onPress={() => setFocusedIdentity(track.participant.identity)}
               >
-                {isTrackReference(track) ? (
+                {hasLiveVideo(track) ? (
                   <VideoTrack trackRef={track} style={styles.video} objectFit="cover" />
                 ) : (
                   <Avatar label={label} />

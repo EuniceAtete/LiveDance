@@ -80,3 +80,21 @@
   animation: indicator-glow 1.5s infinite ease-in-out;
 }
 
+/* Hardens the LiveKit control bar against disappearing when a track changes
+   mid-call. Its default layout depends on calc(100% - var(--lk-control-bar-height))
+   resolving correctly at all times; pinning explicit flex sizing here means
+   it can't collapse regardless of that calc/var timing. */
+.lk-video-conference-inner {
+  height: 100%;
+}
+.lk-grid-layout-wrapper,
+.lk-focus-layout-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+.lk-control-bar {
+  flex-shrink: 0;
+  min-height: 69px;
+}
+
