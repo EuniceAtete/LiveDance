@@ -202,28 +202,24 @@ function ControlButton({
     </View>
   );
 
-  if (active) {
-    return (
-      <Pressable onPress={onPress} style={({ pressed }) => [styles.controlBtnShape, pressed && styles.pressed]}>
-        <LinearGradient colors={[colors.uvPurple, colors.uvBlue]} style={styles.controlBtnFill}>
-          {content}
-        </LinearGradient>
-      </Pressable>
-    );
-  }
+  // Always render the same tree shape (Pressable > LinearGradient > content) and
+  // only vary the gradient colors/border by state — branching to a structurally
+  // different tree per state made React remount the button on every toggle,
+  // which showed up as the button flickering/disappearing on press.
+  const fillColors = active
+    ? ([colors.uvPurple, colors.uvBlue] as const)
+    : danger
+      ? ([colors.error + '26', colors.error + '26'] as const)
+      : ([colors.bgElevated2, colors.bgElevated2] as const);
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.controlBtnShape,
-        styles.controlBtnFill,
-        styles.controlBtnNeutral,
-        danger && styles.controlBtnDanger,
-        pressed && styles.pressed,
-      ]}
-    >
-      {content}
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.controlBtnShape, pressed && styles.pressed]}>
+      <LinearGradient
+        colors={fillColors}
+        style={[styles.controlBtnFill, !active && styles.controlBtnBordered, danger && styles.controlBtnDangerBorder]}
+      >
+        {content}
+      </LinearGradient>
     </Pressable>
   );
 }
@@ -532,13 +528,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  controlBtnNeutral: {
-    backgroundColor: colors.bgElevated2,
+  controlBtnBordered: {
     borderWidth: 1,
     borderColor: colors.border,
   },
-  controlBtnDanger: {
-    backgroundColor: colors.error + '26',
+  controlBtnDangerBorder: {
     borderColor: colors.error,
   },
   controlBtnInner: {
